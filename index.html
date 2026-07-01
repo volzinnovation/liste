@@ -2,61 +2,160 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Deine Liste</title>
+    <meta
+      name="description"
+      content="Eine einfache Liste, die komplett im Link gespeichert und ohne Konto geteilt wird."
+    />
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous"
     />
+    <style>
+      :root {
+        --ink: #171717;
+        --muted: #60646c;
+        --paper: #f4f5f1;
+        --line: rgba(23, 23, 23, 0.14);
+      }
+
+      body {
+        background: var(--paper);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 760px;
+        padding: 7vh 1rem 3rem;
+      }
+
+      .hero {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.4rem;
+      }
+
+      h1 {
+        font-size: clamp(2.6rem, 9vw, 5.4rem);
+        letter-spacing: 0;
+        line-height: 0.9;
+      }
+
+      .lead {
+        color: var(--muted);
+        max-width: 34rem;
+      }
+
+      .list-row {
+        align-items: center;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: space-between;
+      }
+
+      .list-row span {
+        overflow-wrap: anywhere;
+      }
+
+      .empty-state {
+        color: var(--muted);
+      }
+
+      .meta-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 1rem 0;
+      }
+
+      .meta-box {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+      }
+
+      .meta-box span {
+        color: var(--muted);
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .share-url {
+        color: var(--muted);
+        font-size: 0.85rem;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 560px) {
+        .meta-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .btn-toolbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
   </head>
 
   <body>
-    <div class="alert alert-warning" role="alert">
-      Ein Klick auf Listeneinträge löscht diese!
-    </div>
-    <div class="container">
-      <h1>Deine Liste</h1>
-    </div>
+    <main class="container">
+      <section class="hero">
+        <p class="text-uppercase fw-bold text-secondary small mb-2">Link statt Login</p>
+        <h1>Deine Liste</h1>
+        <p class="lead mb-0">
+          Eintraege werden nur im URL-Hash gespeichert. Wer den Link hat, hat die
+          Liste; auf dem Server wird nichts gespeichert.
+        </p>
+      </section>
 
-    <form>
-      <div class="input-group">
-        <div class="input-group-text" id="btnGroupAddon">+</div>
-        <input
-          type="text"
-          name="eintrag"
-          class="form-control"
-          placeholder="Tippen und mit Return hinzufügen..."
-          aria-label="Hinzufügen..."
-          aria-describedby="btnGroupAddon"
-        />
+      <form class="mb-3">
+        <label class="form-label fw-bold" for="eintrag">Neuer Eintrag</label>
+        <div class="input-group">
+          <span class="input-group-text" id="btnGroupAddon">+</span>
+          <input
+            id="eintrag"
+            type="text"
+            name="eintrag"
+            class="form-control"
+            placeholder="Tippen und mit Return hinzufuegen..."
+            aria-label="Eintrag hinzufuegen"
+            aria-describedby="btnGroupAddon"
+            autofocus
+          />
+        </div>
+      </form>
+
+      <ul class="list-group mb-3" id="list" aria-live="polite"></ul>
+
+      <div class="meta-grid" aria-label="Listenstatus">
+        <div class="meta-box">
+          <span>Eintraege</span>
+          <strong id="item-count">0</strong>
+        </div>
+        <div class="meta-box">
+          <span>Link-Laenge</span>
+          <strong><span id="url-length">0</span> Zeichen</strong>
+        </div>
       </div>
-      <ul class="list-group" id="list"></ul>
 
-      <div class="btn-group me-2" role="group" aria-label="First group">
-        <a href="#" target="_blank" class="btn btn-outline-secondary"
-          >Neue Liste</a
-        >
-        <button
-          type="button"
-          onclick="copyLink()"
-          class="btn btn-outline-secondary"
-        >
-          Link kopieren
-        </button>
-        <a href="#" id="mailurl" class="btn btn-outline-secondary"
-          >Liste senden</a
-        >
+      <div class="btn-toolbar gap-2 mb-3" role="toolbar" aria-label="Listenaktionen">
+        <a href="index.html" class="btn btn-outline-secondary">Neue Liste</a>
+        <button type="button" id="copy-link" class="btn btn-primary">Link kopieren</button>
+        <a href="#" id="mailurl" class="btn btn-outline-secondary">Liste senden</a>
+        <button type="button" id="sort-list" class="btn btn-outline-secondary">Sortieren</button>
+        <button type="button" id="clear-list" class="btn btn-outline-danger">Leeren</button>
       </div>
-    </form>
 
-    <div style="visibility: hidden;">
-      Weblink: <a href="index.html#" id="myurl">link url</a>
-    </div>
+      <p id="copy-feedback" class="text-success fw-bold" aria-live="polite"></p>
+      <p class="share-url">Weblink: <a href="index.html#" id="myurl">index.html#</a></p>
+    </main>
 
     <script src="app.js"></script>
   </body>

@@ -1,118 +1,175 @@
 "use strict";
 
-// IE does not know about the target attribute. It looks for srcElement
-// This function will get the event target in a browser-compatible way
-function getEventTarget(e) {
-  e = e || window.event;
-  return e.target || e.srcElement;
-}
-
-/* Global variables */
 const SEPARATOR = ";";
-let urlElement = document.getElementById("myurl");
-let mailElement = document.getElementById("mailurl");
-let listElement = document.getElementById("list");
-const listForm = document.querySelector("form"); // Ohne id
 
-let listData = [];
-
-onLoadPage();
-
-function buildMailLink() {
-  let text =
-    "mailto:?&subject=Meine Liste&body=Findest Du hier: " +
-    document.documentURI;
-  return encodeURI(text);
+function normalizeItem(itemText) {
+  return String(itemText || "").replace(/\s+/g, " ").trim();
 }
 
-function loadItem(itemText, isAppend = false) {
-  //itemText already substituted SEPARATOR is assumed
-  if (isAppend) {
-    let url = new URL(document.location);
-    let hash = url.hash;
-    document.location.hash = hash + encodeURI(itemText) + SEPARATOR;
+function encodeList(items) {
+  const cleanItems = items.map(normalizeItem).filter(Boolean);
+  if (!cleanItems.length) {
+    return "";
   }
-  listData.push(itemText);
-  /* Display in HTML  */
-  const newListElement = document.createElement("li");
-  newListElement.innerText = itemText;
-  newListElement.setAttribute(
-    "class",
-    "list-group-item  list-group-item-action"
-  );
-  listElement.appendChild(newListElement);
-  urlElement.innerText = document.documentURI;
-  urlElement.href = document.documentURI;
-  mailElement.href = buildMailLink();
+  return cleanItems.map((item) => encodeURIComponent(item)).join(SEPARATOR) + SEPARATOR;
 }
 
-function appendItem(itemText) {
-  itemText = itemText.replace(SEPARATOR, "");
-  loadItem(itemText, true);
-}
-
-function loadDataFromHash() {
-  /* Load data from Fragment */
-  listData = [];
-  /* Clear Displayed List */
-  while (listElement.firstChild) {
-    listElement.removeChild(listElement.firstChild);
+function decodeHash(hash) {
+  const rawHash = String(hash || "").replace(/^#/, "");
+  if (!rawHash) {
+    return [];
   }
-  let url = new URL(document.location);
-  let hash = url.hash;
-  console.log(hash);
-  hash = decodeURI(hash);
-  console.log();
-  if (hash.length > 1) {
-    hash = hash.slice(1, -1); // Remove # and last ,
-    for (let itemText of hash.split(SEPARATOR)) {
-      loadItem(itemText);
-    }
+  return rawHash
+    .split(SEPARATOR)
+    .filter(Boolean)
+    .map((item) => {
+      try {
+        return decodeURIComponent(item);
+      } catch (_error) {
+        return item;
+      }
+    })
+    .map(normalizeItem)
+    .filter(Boolean);
+}
+
+function listUrl(items) {
+  const url = new URL(window.location.href);
+  url.hash = encodeList(items);
+  return url.toString();
+}
+
+function setHash(items) {
+  const encoded = encodeList(items);
+  if (window.location.hash.replace(/^#/, "") !== encoded) {
+    window.location.hash = encoded;
   }
 }
 
-function onLoadPage() {
-  loadDataFromHash();
-  /* Event Handler */
-  listElement.onclick = function (event) {
-    let target = getEventTarget(event);
-    remove(target.innerHTML);
+function buildMailLink(url) {
+  const subject = encodeURIComponent("Meine Liste");
+  const body = encodeURIComponent(`Findest Du hier: ${url}`);
+  return `mailto:?subject=${subject}&body=${body}`;
+}
+
+function renderList(state) {
+  state.listElement.replaceChildren();
+
+  if (!state.items.length) {
+    const empty = document.createElement("li");
+    empty.className = "list-group-item empty-state";
+    empty.textContent = "Noch keine Eintraege. Tippen, Return druecken, Link teilen.";
+    state.listElement.appendChild(empty);
+  }
+
+  state.items.forEach((itemText, index) => {
+    const row = document.createElement("li");
+    row.className = "list-group-item list-row";
+
+    const label = document.createElement("span");
+    label.textContent = itemText;
+    row.appendChild(label);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "btn btn-sm btn-outline-danger";
+    removeButton.textContent = "Entfernen";
+    removeButton.setAttribute("aria-label", `${itemText} entfernen`);
+    removeButton.addEventListener("click", () => {
+      state.items.splice(index, 1);
+      setHash(state.items);
+      renderList(state);
+    });
+    row.appendChild(removeButton);
+    state.listElement.appendChild(row);
+  });
+
+  const url = listUrl(state.items);
+  state.urlElement.textContent = url;
+  state.urlElement.href = url;
+  state.mailElement.href = buildMailLink(url);
+  state.countElement.textContent = state.items.length.toLocaleString("de-DE");
+  state.lengthElement.textContent = url.length.toLocaleString("de-DE");
+  state.clearButton.disabled = state.items.length === 0;
+  state.sortButton.disabled = state.items.length < 2;
+}
+
+function syncFromHash(state) {
+  state.items = decodeHash(window.location.hash);
+  renderList(state);
+}
+
+async function copyLink(state) {
+  const url = listUrl(state.items);
+  try {
+    await navigator.clipboard.writeText(url);
+    state.feedbackElement.textContent = "Link kopiert.";
+  } catch (_error) {
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.value = url;
+    input.select();
+    document.execCommand("copy");
+    document.body.removeChild(input);
+    state.feedbackElement.textContent = "Link kopiert.";
+  }
+  window.setTimeout(() => {
+    state.feedbackElement.textContent = "";
+  }, 1600);
+}
+
+function initListApp() {
+  const state = {
+    items: [],
+    listElement: document.getElementById("list"),
+    urlElement: document.getElementById("myurl"),
+    mailElement: document.getElementById("mailurl"),
+    countElement: document.getElementById("item-count"),
+    lengthElement: document.getElementById("url-length"),
+    feedbackElement: document.getElementById("copy-feedback"),
+    clearButton: document.getElementById("clear-list"),
+    sortButton: document.getElementById("sort-list"),
   };
+  const listForm = document.querySelector("form");
+
+  syncFromHash(state);
+  window.addEventListener("hashchange", () => syncFromHash(state));
 
   listForm.addEventListener("submit", (event) => {
-    // stop our form submission from refreshing the page
     event.preventDefault();
-
-    // get dream value and add it to the list
-    let newItem = listForm.elements.eintrag.value;
-    appendItem(newItem);
-
-    // reset form
+    const newItem = normalizeItem(listForm.elements.eintrag.value);
+    if (!newItem) {
+      listForm.elements.eintrag.focus();
+      return;
+    }
+    state.items.push(newItem);
+    setHash(state.items);
+    renderList(state);
     listForm.reset();
     listForm.elements.eintrag.focus();
   });
+
+  document.getElementById("copy-link").addEventListener("click", () => copyLink(state));
+  state.clearButton.addEventListener("click", () => {
+    state.items = [];
+    setHash(state.items);
+    renderList(state);
+  });
+  state.sortButton.addEventListener("click", () => {
+    state.items.sort((a, b) => a.localeCompare(b, "de"));
+    setHash(state.items);
+    renderList(state);
+  });
 }
 
-function remove(itemText) {
-  let position = listData.indexOf(itemText);
-  listData.splice(position, 1);
-  let newHash = "";
-  for (let item in listData) {
-    newHash = newHash + encodeURI(listData[item]) + SEPARATOR;
-  }
-  document.location.hash = newHash;
-  loadDataFromHash();
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", initListApp);
 }
 
-function copyLink() {
-  const input = document.createElement("input");
-  document.body.appendChild(input);
-  input.value = document.documentURI;
-  input.select();
-  document.execCommand("copy");
-  document.body.removeChild(input);
-
-  alert(
-    "Link ist nun in ihrer Zwischenablage und kann woanders eingesetzt werden!"
-  );
+if (typeof module !== "undefined") {
+  module.exports = {
+    decodeHash,
+    encodeList,
+    normalizeItem,
+  };
 }
