@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   decodeHash,
   encodeList,
+  markdownChecklist,
   normalizeItem,
   parseItemsFromText,
   plainTextList,
@@ -28,5 +29,9 @@ assert.deepEqual(
   ["Milch", "Brot", "Semikolon; bleibt", "Viele Leerzeichen"],
 );
 assert.equal(plainTextList(["Milch", "  Brot  ", ""]), "Milch\nBrot");
+assert.equal(
+  markdownChecklist(["Milch", "  Brot  ", ""]),
+  "- [ ] Milch\n- [ ] Brot",
+);
 
 console.log("URL hash round-trips passed.");

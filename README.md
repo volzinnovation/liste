@@ -9,7 +9,7 @@ UI is in German and beautified with Bootstrap.
 - robust URL-hash round-trips for spaces, umlauts, and separator characters
 - bulk import from pasted lines without splitting valid semicolons inside items
 - explicit remove buttons instead of accidental click-to-delete
-- copy link, copy plain text, mail, sort, clear, count, and URL-length feedback
+- copy link, plain text, Markdown checklist, mail, sort, clear, count, and URL-length feedback
 
 ## Local checks
 

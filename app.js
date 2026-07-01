@@ -18,6 +18,14 @@ function plainTextList(items) {
   return items.map(normalizeItem).filter(Boolean).join("\n");
 }
 
+function markdownChecklist(items) {
+  return items
+    .map(normalizeItem)
+    .filter(Boolean)
+    .map((item) => `- [ ] ${item}`)
+    .join("\n");
+}
+
 function encodeList(items) {
   const cleanItems = items.map(normalizeItem).filter(Boolean);
   if (!cleanItems.length) {
@@ -105,6 +113,7 @@ function renderList(state) {
   state.clearButton.disabled = state.items.length === 0;
   state.sortButton.disabled = state.items.length < 2;
   state.copyTextButton.disabled = state.items.length === 0;
+  state.copyMarkdownButton.disabled = state.items.length === 0;
 }
 
 function syncFromHash(state) {
@@ -139,6 +148,10 @@ async function copyPlainText(state) {
   await copyText(plainTextList(state.items), state, "Text kopiert.");
 }
 
+async function copyMarkdown(state) {
+  await copyText(markdownChecklist(state.items), state, "Markdown kopiert.");
+}
+
 function initListApp() {
   const state = {
     items: [],
@@ -153,6 +166,7 @@ function initListApp() {
     importElement: document.getElementById("bulk-items"),
     importButton: document.getElementById("import-items"),
     copyTextButton: document.getElementById("copy-text"),
+    copyMarkdownButton: document.getElementById("copy-markdown"),
   };
   const listForm = document.querySelector("form");
 
@@ -175,6 +189,7 @@ function initListApp() {
 
   document.getElementById("copy-link").addEventListener("click", () => copyLink(state));
   state.copyTextButton.addEventListener("click", () => copyPlainText(state));
+  state.copyMarkdownButton.addEventListener("click", () => copyMarkdown(state));
   state.importButton.addEventListener("click", () => {
     const importedItems = parseItemsFromText(state.importElement.value);
     if (!importedItems.length) {
@@ -208,6 +223,7 @@ if (typeof module !== "undefined") {
     encodeList,
     normalizeItem,
     parseItemsFromText,
+    markdownChecklist,
     plainTextList,
   };
 }
