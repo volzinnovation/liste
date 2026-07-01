@@ -6,6 +6,18 @@ function normalizeItem(itemText) {
   return String(itemText || "").replace(/\s+/g, " ").trim();
 }
 
+function parseItemsFromText(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*•]\s+|\d+[.)]\s+)/, ""))
+    .map(normalizeItem)
+    .filter(Boolean);
+}
+
+function plainTextList(items) {
+  return items.map(normalizeItem).filter(Boolean).join("\n");
+}
+
 function encodeList(items) {
   const cleanItems = items.map(normalizeItem).filter(Boolean);
   if (!cleanItems.length) {
@@ -92,6 +104,7 @@ function renderList(state) {
   state.lengthElement.textContent = url.length.toLocaleString("de-DE");
   state.clearButton.disabled = state.items.length === 0;
   state.sortButton.disabled = state.items.length < 2;
+  state.copyTextButton.disabled = state.items.length === 0;
 }
 
 function syncFromHash(state) {
@@ -101,21 +114,29 @@ function syncFromHash(state) {
 
 async function copyLink(state) {
   const url = listUrl(state.items);
+  await copyText(url, state, "Link kopiert.");
+}
+
+async function copyText(text, state, successMessage) {
   try {
-    await navigator.clipboard.writeText(url);
-    state.feedbackElement.textContent = "Link kopiert.";
+    await navigator.clipboard.writeText(text);
+    state.feedbackElement.textContent = successMessage;
   } catch (_error) {
     const input = document.createElement("input");
     document.body.appendChild(input);
-    input.value = url;
+    input.value = text;
     input.select();
     document.execCommand("copy");
     document.body.removeChild(input);
-    state.feedbackElement.textContent = "Link kopiert.";
+    state.feedbackElement.textContent = successMessage;
   }
   window.setTimeout(() => {
     state.feedbackElement.textContent = "";
   }, 1600);
+}
+
+async function copyPlainText(state) {
+  await copyText(plainTextList(state.items), state, "Text kopiert.");
 }
 
 function initListApp() {
@@ -129,6 +150,9 @@ function initListApp() {
     feedbackElement: document.getElementById("copy-feedback"),
     clearButton: document.getElementById("clear-list"),
     sortButton: document.getElementById("sort-list"),
+    importElement: document.getElementById("bulk-items"),
+    importButton: document.getElementById("import-items"),
+    copyTextButton: document.getElementById("copy-text"),
   };
   const listForm = document.querySelector("form");
 
@@ -150,6 +174,18 @@ function initListApp() {
   });
 
   document.getElementById("copy-link").addEventListener("click", () => copyLink(state));
+  state.copyTextButton.addEventListener("click", () => copyPlainText(state));
+  state.importButton.addEventListener("click", () => {
+    const importedItems = parseItemsFromText(state.importElement.value);
+    if (!importedItems.length) {
+      state.importElement.focus();
+      return;
+    }
+    state.items.push(...importedItems);
+    setHash(state.items);
+    renderList(state);
+    state.importElement.value = "";
+  });
   state.clearButton.addEventListener("click", () => {
     state.items = [];
     setHash(state.items);
@@ -171,5 +207,7 @@ if (typeof module !== "undefined") {
     decodeHash,
     encodeList,
     normalizeItem,
+    parseItemsFromText,
+    plainTextList,
   };
 }

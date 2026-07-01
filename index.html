@@ -91,6 +91,24 @@
         overflow-wrap: anywhere;
       }
 
+      .import-panel {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 0.85rem;
+      }
+
+      .import-panel summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .import-panel textarea {
+        min-height: 8rem;
+        resize: vertical;
+      }
+
       @media (max-width: 560px) {
         .meta-grid {
           grid-template-columns: 1fr;
@@ -132,6 +150,19 @@
         </div>
       </form>
 
+      <details class="import-panel">
+        <summary>Mehrere Eintraege</summary>
+        <label class="form-label fw-bold mt-3" for="bulk-items">Zeilen einfuegen</label>
+        <textarea
+          id="bulk-items"
+          class="form-control mb-2"
+          placeholder="Milch&#10;Brot&#10;Semikolon; bleibt"
+        ></textarea>
+        <button type="button" id="import-items" class="btn btn-outline-secondary">
+          Importieren
+        </button>
+      </details>
+
       <ul class="list-group mb-3" id="list" aria-live="polite"></ul>
 
       <div class="meta-grid" aria-label="Listenstatus">
@@ -148,6 +179,7 @@
       <div class="btn-toolbar gap-2 mb-3" role="toolbar" aria-label="Listenaktionen">
         <a href="index.html" class="btn btn-outline-secondary">Neue Liste</a>
         <button type="button" id="copy-link" class="btn btn-primary">Link kopieren</button>
+        <button type="button" id="copy-text" class="btn btn-outline-secondary">Text kopieren</button>
         <a href="#" id="mailurl" class="btn btn-outline-secondary">Liste senden</a>
         <button type="button" id="sort-list" class="btn btn-outline-secondary">Sortieren</button>
         <button type="button" id="clear-list" class="btn btn-outline-danger">Leeren</button>

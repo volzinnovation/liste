@@ -7,8 +7,9 @@ UI is in German and beautified with Bootstrap.
 
 - no account, database, cookie, or server state
 - robust URL-hash round-trips for spaces, umlauts, and separator characters
+- bulk import from pasted lines without splitting valid semicolons inside items
 - explicit remove buttons instead of accidental click-to-delete
-- copy, mail, sort, clear, count, and URL-length feedback
+- copy link, copy plain text, mail, sort, clear, count, and URL-length feedback
 
 ## Local checks
 

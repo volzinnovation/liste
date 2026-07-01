@@ -1,6 +1,12 @@
 const assert = require("node:assert/strict");
 
-const { decodeHash, encodeList, normalizeItem } = require("../app.js");
+const {
+  decodeHash,
+  encodeList,
+  normalizeItem,
+  parseItemsFromText,
+  plainTextList,
+} = require("../app.js");
 
 const cases = [
   [],
@@ -17,5 +23,10 @@ for (const items of cases) {
 
 assert.equal(encodeList(["", "   "]), "");
 assert.deepEqual(decodeHash("#Milch;Brot;"), ["Milch", "Brot"]);
+assert.deepEqual(
+  parseItemsFromText("1. Milch\n- Brot\nSemikolon; bleibt\n\n  Viele   Leerzeichen"),
+  ["Milch", "Brot", "Semikolon; bleibt", "Viele Leerzeichen"],
+);
+assert.equal(plainTextList(["Milch", "  Brot  ", ""]), "Milch\nBrot");
 
 console.log("URL hash round-trips passed.");
